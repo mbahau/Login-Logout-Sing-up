@@ -10,6 +10,12 @@ mongoose.connect("mongodb://localhost/web_chat_app");
 
 var app = express();
 
+//http module | integrate
+var http = require('http').createServer(app);
+
+//input output for socket.io
+var io = require('socket.io')(http);
+
 app.set('view engine', 'ejs');
 
 //we are getting data by POST of register page || posting data to a request
@@ -41,7 +47,8 @@ app.get("/", function(req, res){
 //secret page , visible after login
 // user is login / logout check first with isLoggedIn
 app.get("/secret", isLoggedIn, function(req, res){
-    res.render("secret");
+    //res.render("secret");
+    res.sendFile(__dirname+'/views/secret.html');
 });
 
 //authentication routhes
@@ -101,7 +108,21 @@ function isLoggedIn(req, res, next){
         res.redirect("/login");
 };
 
+//socket logic for connected user| disconnected | share message
+io.on('connection', function(socket){
+    console.log('A user is connected');
+
+    socket.on('chat message', function(msg){
+        console.log(msg);
+        io.emit('chat message', msg);
+    });
+
+    socket.on('disconnect', function(){
+        console.log('A user is disconnected');
+    });
+});
+
 //hosting on 3001 port | local host
-app.listen(3001, process.env.IP, function(){
-    console.log("server started ...");
+http.listen(3001, process.env.IP, function(){
+    console.log("server started on 3001 port...");
 })
